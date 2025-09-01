@@ -1,0 +1,31 @@
+node_modules/
+
+# Environment files / secrets
+.env
+.env.local
+server/.env
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# OS / Editor junk
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Build outputs
+bin-debug/
+bin-release/
+dist/
+coverage/
+
+# Archives and temporary
+*.zip
+*.tmp
+*.swp
+.idea/

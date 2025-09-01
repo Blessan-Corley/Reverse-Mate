@@ -1,0 +1,31 @@
+{
+    "name": "chess-pursuit",
+    "version": "0.1.0",
+    "private": true,
+    "devDependencies": {
+        "vite": "^5.4.3",
+        "cross-env": "^7.0.3",
+        "@typescript-eslint/eslint-plugin": "^7.17.0",
+        "@typescript-eslint/parser": "^7.17.0",
+        "eslint": "^8.57.0",
+        "eslint-config-prettier": "^9.1.0",
+        "prettier": "^3.3.3",
+        "typescript": "^5.5.4",
+        "vitest": "^2.0.5"
+    },
+    "dependencies": {
+        "cors": "^2.8.5",
+        "express": "^4.19.2",
+        "mongodb": "^6.8.0",
+        "dotenv": "^16.4.5"
+    },
+    "scripts": {
+        "dev": "vite --open src/index.html",
+        "build": "vite build",
+        "preview": "vite preview",
+        "serve": "node server/index.js",
+        "lint": "eslint \"src/**/*.{js,ts}\"",
+        "format": "prettier --write .",
+        "test": "vitest"
+    }
+}
