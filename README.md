@@ -1,4 +1,8 @@
-# Chess Pursuit
+# Reverse Mate
+
+## Credits
+
+Inspired from https://github.com/Saturnyn/ChessPursuit
 
 ## Modern Development
 
@@ -8,7 +12,7 @@ This repo now supports a modern local workflow with Vite for the client and Node
 
 - Node 18+
 
-### Setup
+### Setup 
 
 1. Create a `.env` file in the project root and set:
     - `MONGO_URI` (your MongoDB connection string)
@@ -50,3 +54,5 @@ The build outputs to `dist/`. You can serve it with any static file host. The AP
 
 - UI/UX, story, and gameplay remain unchanged.
 - Name prompt is persistent via `localStorage` (`cp_player_name_v1`). Use the in-game “Change name” to update.
+
+
