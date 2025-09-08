@@ -1,0 +1,520 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+        />
+        <title>Reverse Mate</title>
+        <script type="text/javascript" src="requestAnimationFame.js"></script>
+        <script type="text/javascript" src="jsfxr.js"></script>
+        <script type="text/javascript" src="game-audio.js"></script>
+        <script type="text/javascript" src="modules/projection.js"></script>
+        <script type="text/javascript" src="modules/input-keys.js"></script>
+        <script type="text/javascript" src="modules/collisions.js"></script>
+        <script type="text/javascript" src="modules/board.js"></script>
+        <script type="text/javascript" src="modules/perf.js"></script>
+        <script type="text/javascript" src="modules/svg-layer.js"></script>
+        <script type="text/javascript" src="game.js"></script>
+        <style type="text/css">
+            body {
+                background-color: #000;
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
+                -khtml-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+            }
+            html,
+            body,
+            canvas {
+                margin: 0;
+                padding: 0;
+            }
+            canvas,
+            svg {
+                display: block;
+                position: absolute;
+                top: 0;
+                left: 0;
+            }
+            svg {
+                overflow: hidden;
+            }
+            #root {
+                cursor: pointer;
+            }
+            .help {
+                box-sizing: border-box;
+                font-size: 14px;
+                padding: 8px;
+                color: #999;
+                font-family: sans-serif;
+                text-align: center;
+                position: absolute;
+                left: 0;
+                bottom: 0;
+                width: 100%;
+            }
+            .help a {
+                color: #93c5fd;
+                text-decoration: underline;
+            }
+            .help a:hover {
+                color: #bfdbfe;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="help">
+            Use QWEASDZC or arrows to move; click adjacent tiles to step. <br />
+            Press Enter to pause. <br />
+            <a href="#" id="howToLink">How to play</a> ·
+            <a href="#" id="changeNameLink">Change name</a>
+        </div>
+
+        <!-- How To Play Modal -->
+        <div
+            id="howToModal"
+            style="
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.6);
+                z-index: 9999;
+            "
+        >
+            <div
+                style="
+                    position: absolute;
+                    left: 50%;
+                    top: 50%;
+                    transform: translate(-50%, -50%);
+                    background: #111;
+                    color: #eee;
+                    width: 90%;
+                    max-width: 520px;
+                    border: 1px solid #333;
+                    border-radius: 6px;
+                "
+            >
+                <div
+                    style="
+                        padding: 14px 16px;
+                        border-bottom: 1px solid #333;
+                        font-family: sans-serif;
+                        font-size: 18px;
+                    "
+                >
+                    How to play
+                </div>
+                <div
+                    style="
+                        padding: 12px 16px;
+                        font-family: sans-serif;
+                        font-size: 14px;
+                        line-height: 1.5;
+                        color: #ddd;
+                    "
+                >
+                    - Reach the top without getting into threatened tiles.<br />
+                    - Move with QWEASDZC or arrow keys; click adjacent tiles to move.<br />
+                    - Avoid red-highlighted danger tiles; green rows are checkpoints.<br />
+                    - Press Enter to pause and think about your next moves.<br />
+                </div>
+                <div style="padding: 12px 16px; display: flex; justify-content: flex-end; gap: 8px">
+                    <button
+                        id="howToClose"
+                        style="
+                            padding: 6px 12px;
+                            background: #333;
+                            color: #eee;
+                            border: 1px solid #444;
+                            border-radius: 4px;
+                            cursor: pointer;
+                        "
+                    >
+                        Close
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Name Prompt Modal -->
+        <div
+            id="nameModal"
+            style="
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.6);
+                z-index: 9999;
+            "
+        >
+            <div
+                style="
+                    position: absolute;
+                    left: 50%;
+                    top: 50%;
+                    transform: translate(-50%, -50%);
+                    background: #0f172a;
+                    color: #e5e7eb;
+                    width: 90%;
+                    max-width: 520px;
+                    border: 1px solid #334155;
+                    border-radius: 8px;
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+                "
+            >
+                <div
+                    style="
+                        padding: 14px 16px;
+                        border-bottom: 1px solid #334155;
+                        font-family: sans-serif;
+                        font-size: 18px;
+                        background: #111827;
+                        color: #93c5fd;
+                    "
+                >
+                    Welcome
+                </div>
+                <div
+                    style="
+                        padding: 12px 16px;
+                        font-family: sans-serif;
+                        font-size: 14px;
+                        line-height: 1.5;
+                        color: #cbd5e1;
+                    "
+                >
+                    Enter your name to begin.
+                    <div
+                        id="currentNameLabel"
+                        style="margin-top: 8px; margin-bottom: 6px; font-size: 12px; color: #93c5fd"
+                    ></div>
+                    <div style="margin-top: 4px">
+                        <input
+                            id="playerNameInput"
+                            type="text"
+                            placeholder="Your name"
+                            style="
+                                width: 100%;
+                                padding: 10px;
+                                background: #0b0f1a;
+                                color: #e5e7eb;
+                                border: 1px solid #334155;
+                                border-radius: 6px;
+                            "
+                        />
+                    </div>
+                </div>
+                <div style="padding: 12px 16px; display: flex; justify-content: flex-end; gap: 8px">
+                    <button
+                        id="nameSaveBtn"
+                        style="
+                            padding: 8px 14px;
+                            background: #2563eb;
+                            color: #fff;
+                            border: 1px solid #1e40af;
+                            border-radius: 6px;
+                            cursor: pointer;
+                        "
+                    >
+                        Start
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Win + Leaderboard Modal (hidden until win) -->
+        <div
+            id="winModal"
+            style="
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0, 0, 0, 0.6);
+                z-index: 9999;
+            "
+        >
+            <div
+                style="
+                    position: absolute;
+                    left: 50%;
+                    top: 50%;
+                    transform: translate(-50%, -50%);
+                    background: #111;
+                    color: #eee;
+                    width: 92%;
+                    max-width: 680px;
+                    border: 1px solid #333;
+                    border-radius: 6px;
+                "
+            >
+                <div
+                    style="
+                        padding: 14px 16px;
+                        border-bottom: 1px solid #333;
+                        font-family: sans-serif;
+                        font-size: 18px;
+                    "
+                >
+                    You have successfully completed the game!
+                </div>
+                <div
+                    style="
+                        padding: 12px 16px;
+                        font-family: sans-serif;
+                        font-size: 14px;
+                        line-height: 1.5;
+                        color: #ddd;
+                    "
+                >
+                    <div
+                        id="leaderboardContainer"
+                        style="margin-top: 6px; max-height: 320px; overflow: auto"
+                    ></div>
+                </div>
+                <div style="padding: 12px 16px; display: flex; justify-content: flex-end; gap: 8px">
+                    <button
+                        id="playAgainBtn"
+                        style="
+                            padding: 6px 12px;
+                            background: #2563eb;
+                            color: #fff;
+                            border: 1px solid #1f51be;
+                            border-radius: 4px;
+                            cursor: pointer;
+                        "
+                    >
+                        Play again
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            (function () {
+                var API_ORIGIN =
+                    window.LEADERBOARD_API_ORIGIN ||
+                    (/^https?:/.test(location.origin) ? '' : 'http://localhost:5000');
+                var LBL_SEEN_KEY = 'cp_seen_leaderboard_v1';
+                var mainList = document.createElement('div');
+                mainList.id = 'mainLeaderboard';
+                mainList.style.cssText =
+                    'position:absolute; right:8px; top:8px; width:240px; max-height:300px; overflow:auto; background:rgba(0,0,0,0.35); color:#eee; border:1px solid #333; border-radius:6px; display:none;';
+                mainList.innerHTML =
+                    '<div style="padding:8px; font: 14px sans-serif; border-bottom:1px solid #333;">Top players (fewest pauses)</div><div id="mainLbItems" style="padding:6px 8px;"></div>';
+                document.body.appendChild(mainList);
+                var mainLbItems = document.getElementById('mainLbItems');
+
+                var lbSkip = 0;
+                var lbLimit = 10;
+                var lbLoading = false;
+                var lbDone = false;
+
+                function renderRows(container, items, offset) {
+                    for (var i = 0; i < items.length; i++) {
+                        var r = items[i];
+                        var row = document.createElement('div');
+                        row.style.cssText =
+                            'display:flex; justify-content:space-between; padding:4px 0; border-bottom:1px solid #222; font: 12px sans-serif;';
+                        row.innerHTML =
+                            '<span>' +
+                            (offset + i + 1) +
+                            '. ' +
+                            r.name +
+                            '</span><span>' +
+                            r.pauses +
+                            '</span>';
+                        container.appendChild(row);
+                    }
+                }
+
+                async function fetchLbPage(container) {
+                    if (lbLoading || lbDone) return;
+                    lbLoading = true;
+                    try {
+                        var res = await fetch(
+                            API_ORIGIN + '/api/leaderboard?limit=' + lbLimit + '&skip=' + lbSkip
+                        );
+                        var json = await res.json();
+                        var items = json.items || [];
+                        if (items.length === 0) {
+                            lbDone = true;
+                            return;
+                        }
+                        renderRows(container, items, lbSkip);
+                        lbSkip += items.length;
+                    } finally {
+                        lbLoading = false;
+                    }
+                }
+
+                function attachInfiniteScroll(container) {
+                    container.parentElement.addEventListener('scroll', function () {
+                        var el = container.parentElement;
+                        if (el.scrollTop + el.clientHeight >= el.scrollHeight - 8) {
+                            fetchLbPage(container);
+                        }
+                    });
+                }
+
+                
+                var _oldShow = window.showWinLeaderboard;
+                window.showWinLeaderboard = async function () {
+                    try {
+                        var name = localStorage.getItem('cp_player_name_v1') || 'Player';
+                        var pauses = window.__pauseCount || 0;
+                        
+                        await fetch(API_ORIGIN + '/api/leaderboard', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ name: name, pauses: pauses }),
+                        });
+                        
+                        lbSkip = 0;
+                        lbDone = false;
+                        var container = document.getElementById('leaderboardContainer');
+                        container.innerHTML = '';
+                        await fetchLbPage(container);
+                        attachInfiniteScroll(container);
+                        document.getElementById('winModal').style.display = 'block';
+
+                        
+                        try {
+                            localStorage.setItem(LBL_SEEN_KEY, '1');
+                        } catch (e) {}
+                        mainList.style.display = 'block';
+                        mainLbItems.innerHTML = '';
+                        lbSkip = 0;
+                        lbDone = false;
+                        await fetchLbPage(mainLbItems);
+                        attachInfiniteScroll(mainLbItems);
+                    } catch (e) {
+                        console.error(e);
+                        _oldShow && _oldShow();
+                    }
+                };
+
+                
+                try {
+                    if (localStorage.getItem(LBL_SEEN_KEY) === '1') {
+                        mainList.style.display = 'block';
+                        fetchLbPage(mainLbItems);
+                        attachInfiniteScroll(mainLbItems);
+                    }
+                } catch (e) {}
+            })();
+        </script>
+
+        <script>
+            (function () {
+                var nameKey = 'cp_player_name_v1';
+                var boardKey = 'cp_leaderboard_v1';
+                var nameModal = document.getElementById('nameModal');
+                var nameBtn = document.getElementById('nameSaveBtn');
+                var nameInput = document.getElementById('playerNameInput');
+                var nameLabel = document.getElementById('currentNameLabel');
+                var winModal = document.getElementById('winModal');
+                var playAgainBtn = document.getElementById('playAgainBtn');
+                var leaderboardContainer = document.getElementById('leaderboardContainer');
+
+                function getName() {
+                    return localStorage.getItem(nameKey);
+                }
+
+                function setName(name) {
+                    localStorage.setItem(nameKey, name);
+                }
+
+                function updateNameLabel() {
+                    var cur = getName();
+                    if (nameLabel) nameLabel.textContent = cur ? 'Current name: ' + cur : '';
+                }
+                updateNameLabel();
+
+                
+                if (!getName()) {
+                    nameModal.style.display = 'block';
+                    nameInput.focus();
+                } else {
+                    nameModal.style.display = 'none';
+                }
+                nameBtn &&
+                    nameBtn.addEventListener('click', function () {
+                        var v = (nameInput.value || '').trim();
+                        if (!v) return;
+                        setName(v);
+                        nameModal.style.display = 'none';
+                        
+                        window.__pauseCount = 0;
+                        updateNameLabel();
+                        if (window.__startGameIfBlocked) window.__startGameIfBlocked();
+                    });
+
+                
+                nameInput &&
+                    nameInput.addEventListener('keydown', function (e) {
+                        if (e.key === 'Enter') {
+                            nameBtn && nameBtn.click();
+                        }
+                    });
+
+                
+                window.addEventListener('storage', function (e) {
+                    if (e && e.key === nameKey) {
+                        updateNameLabel();
+                    }
+                });
+
+                
+                try {
+                    if (localStorage.getItem(boardKey) === '1') {
+                        mainList.style.display = 'block';
+                        fetchLbPage(mainLbItems);
+                        attachInfiniteScroll(mainLbItems);
+                    }
+                } catch (e) {}
+            })();
+        </script>
+
+        <script>
+            (function () {
+                var link = document.getElementById('howToLink');
+                var modal = document.getElementById('howToModal');
+                var closeBtn = document.getElementById('howToClose');
+                var changeName = document.getElementById('changeNameLink');
+                var nameModal = document.getElementById('nameModal');
+                var nameInput = document.getElementById('playerNameInput');
+                var nameKey = 'cp_player_name_v1';
+                if (link) {
+                    link.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        modal.style.display = 'block';
+                    });
+                }
+                if (closeBtn) {
+                    closeBtn.addEventListener('click', function () {
+                        modal.style.display = 'none';
+                    });
+                }
+                if (changeName) {
+                    changeName.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        try {
+                            var cur = localStorage.getItem(nameKey) || '';
+                            if (nameLabel)
+                                nameLabel.textContent = cur ? 'Current name: ' + cur : '';
+                            nameInput.value = cur;
+                        } catch (_) {}
+                        nameModal.style.display = 'block';
+                        nameInput.focus();
+                    });
+                }
+            })();
+        </script>
+    </body>
+</html>
